@@ -7,7 +7,7 @@
     python3 -m venv test_environment
     source test_environment/bin/activate
     pip3 install  --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple  pyhdf45view
-    python3 pyhdf45view.pyhdf45view YOURFILE.nc
+    python3 -m pyhdf45view.pyhdf45view YOURFILE.nc
 
 This is a tool to view netCDF4, hdf4 and hdf5 files. It has enhanced plotting
 possiblities. It consists of two packages: netcdf45view.py and Fastplot.py.
