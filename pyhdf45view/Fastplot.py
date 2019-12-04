@@ -1,22 +1,53 @@
 '''
 module to quickly plot 3D data in 2D slices.
+
+Author: Martina M. Friedrich
+
+originally developed for comparison tool of nimrod files and IRIS cubes,
+
 '''
 import sys
 pyver = sys.version[0]
 if pyver is "2":
     import Tkinter as Tk
-    import FileDialog
 elif pyver is "3":
     import tkinter as Tk
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
-                                               NavigationToolbar2TkAgg)
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+try:
+    from matplotlib.backends.backend_tkagg import NavigationToolbar2TkAgg
+except:
+    from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk as NavigationToolbar2TkAgg
 from matplotlib.colors import LogNorm
 from matplotlib.pyplot import colormaps
 import numpy as np
 import numpy.ma as ma
+
+def center(toplevel, size= None):
+    toplevel.update_idletasks()
+    w = toplevel.winfo_screenwidth()
+    h = toplevel.winfo_screenheight()
+    if size is None:
+        size = tuple(2*int(_) for _
+                     in toplevel.geometry().split('+')[0].split('x'))
+    x = w/2 - size[0]/2
+    y = h/2 - size[1]/2
+    toplevel.geometry("%dx%d+%d+%d" % (size + (x, y)))
+    return
+
+class HELPWIN:
+    def __init__(self, mtitle, mco="red"):
+        self.helpw = Tk.Toplevel(background=mco)
+        self.helpw.wm_title(mtitle)
+        self.txt = Tk.Label(self.helpw, bg=mco,justify="left")
+        self.txt.pack(side="left")
+
+    def configtext(self, mtext):
+        self.txt.configure(text=mtext)
+        center(self.helpw)
+        return
 
 class POPUP(Tk.Menu):
     '''
@@ -24,7 +55,7 @@ class POPUP(Tk.Menu):
     '''
     def __init__(self, ms, iscalling):
         Tk.Menu.__init__(self, ms, tearoff=0)
-        slist=colormaps()[::4]
+        slist = colormaps()[::4]
         self.iscalling = iscalling
         for ii, mmap in enumerate(slist):
             self.add_command(label=mmap,
@@ -87,8 +118,6 @@ class DATA2D(object):
             else:
                 self.datamax = np.nanmax(np.array(self.data))
                 self.datamin = np.nanmin(np.array(self.data))
-            #print (type(self.data), self.data[~self.data.mask].min())
-            #print (self.data.mask.sum())
 
     def makefig(self):
         self.im = self.pfr.a.imshow(
@@ -96,9 +125,8 @@ class DATA2D(object):
             cmap=self.mycmap, interpolation='none', vmin=self.datamin,
             vmax=self.datamax)
         self.cbar = self.pfr.f.colorbar(self.im)
-        self.pfr.canvas.show()
+        self.pfr.canvas.draw()
         self.pfr.toolbar.update()
-#        self.updatefig()
 
     def updatefig(self, from_slicing=False, plotlog=False ):
         mymin = self.datamin
@@ -107,10 +135,8 @@ class DATA2D(object):
         #self.im.set_data(self.data[self.xmin:self.xmax, self.ymin:self.ymax])
         if from_slicing:
             self.im.set_extent(  # for some reason, this seems to create problems.
-        # june 2017. I still use it, but y-dimension flipped. 
-        # seems ok i.e. 3rd and 4th argument swaped.
             [-0.5, self.im.get_size()[1]-0.5, self.im.get_size()[0]-0.5,-0.5])
-        #self.im.set_data(self.data[self.xmin:self.xmax, self.ymin:self.ymax]) # should not use this?
+        # self.im.set_data(self.data[self.xmin:self.xmax, self.ymin:self.ymax]) # should not use this?
         self.im.set_data(self.data)
         if plotlog:
             self.im.set_norm(LogNorm(mymin, mymax))
@@ -119,15 +145,9 @@ class DATA2D(object):
             self.im.set_norm(None)
             self.cbar.update_bruteforce(self.im)
         self.pfr.canvas.draw()
-        self.cbar.set_array(self.data[self.xmin:self.xmax, self.ymin:self.ymax])  # works with set_data in z
+        self.cbar.set_array(self.data[self.xmin:self.xmax, self.ymin:self.ymax])
+        # works with set_data in z
         self.im.set_cmap(self.mycmap)
-        
-        #print self.ymax, self.xmax, self.data[0,0]
-        #print self.pfr.a.get_xbound(), self.pfr.a.get_ybound()
-        #print self.pfr.a.get_xticks()
-        #print self.pfr.a.get_yticks()
-        #print self.pfr.a.get_xticklabels()[0].get_label()
-        #print "here"
         self.pfr.a.set_xlim(xmin=self.ymin-0.5, xmax=self.ymax-0.5)
         self.pfr.a.set_ylim(top=self.xmin-0.5, bottom=self.xmax-0.5)
         self.im.set_clim(vmin=mymin, vmax=mymax)
@@ -136,9 +156,6 @@ class DATA2D(object):
         self.cbar.update_normal(self.im)
         self.pfr.toolbar.update()
         self.pfr.canvas.draw()
-        # print("x:", self.ymin-0.5, self.ymax-0.5)
-        # print("y:", self.xmin-0.5, self.xmax-0.5)
-
 
     def pick(self, event):
         try:
@@ -150,10 +167,10 @@ class DATA2D(object):
         except:
             pass
         try:
-            print ("xpos: ", self.xdata, "ypos: ", self.ydata, "data: ",)
-            print (self.data[self.ydata, self.xdata])
+            print("xpos: ", self.xdata, "ypos: ", self.ydata, "data: ",)
+            print(self.data[self.ydata, self.xdata])
         except:
-        	print ("data extraction not possible")
+            print("data extraction not possible")
 
 
 class Coordinateframe(Tk.Frame):
@@ -235,7 +252,16 @@ class Coordinateframe(Tk.Frame):
         else:
             self.logison = True
             self.logbutton["text"] = "lin"
-            self.ms.indata.updatefig(plotlog=True)
+            try:
+                self.ms.indata.updatefig(plotlog=True)
+            except ZeroDivisionError:
+                msg = "There are 0 values in the data, adjust z min first"
+                print(msg)
+                HELPWIN("log-plot-error").configtext(msg)
+            except ValueError:
+                msg = "There are <0 values in the data, adjust z min first"
+                print(msg)
+                HELPWIN("log-plot-error").configtext(msg)
 
     def update(self, val):
         self.ms.slice_along = val
@@ -340,6 +366,9 @@ class Figureframe(Tk.Frame):
 
 
 class DATA1D(object):
+    '''
+    quick fix if data in FASTPLOT is 1D
+    '''
     def __init__(self, mdata, pfr):
         self.pfr = pfr  # this is the plot frame
         self.data = mdata
@@ -348,27 +377,34 @@ class DATA1D(object):
 
     def makefig(self):
         self.im = self.pfr.a.plot(self.data[0], self.data[1],'.-')
-        self.pfr.canvas.show()
+        # self.pfr.canvas.show()
+        self.pfr.canvas.draw()
         self.pfr.toolbar.update()
 
 
 class FASTPLOT(Tk.Tk):
     '''
-    parameters:
+    call as e.g.: FASTPLOT(mydata, title="plotting my data")
+    '''
+    def __init__(self, data, title="FASTPLOT", sliceing=0, is1D=False):
+        '''
+        initialize a fastplot view of 2D or 3D data
+
+    Parameters:
     -----------
     data: 2D or 3D np.array or cube or CubeList of 2D cubes. Not all
             functionality given in case of cubelist.
-    title: string to be put in the window frame title bar
-
-    call as e.g.: FASTPLOT(mydata, datap="plotting my data")
-    '''
-    def __init__(self, data, title="FASTPLOT", sliceing=0, is1D=False):
+    title: string
+        to be put in the window frame title bar
+    slicing: int
+        if data is 3D, which slice to start with
+    is1D: logical
+        True if data is in fact 1D
+        '''
         Tk.Tk.__init__(self)
         datap = None
         data = np.squeeze(data)
         self.onedim = is1D
-        #print (type(data))
-        #self.mydata=data
         if is1D:
             pass
         else:
@@ -384,7 +420,7 @@ class FASTPLOT(Tk.Tk):
                 if data.ndim == 3:
                     datap = data
                     data = data[0]
-                    print ("dispaly 0 slice along 0 dimension")
+                    print("dispaly 0 slice along 0 dimension")
                 if data.ndim > 3:
                     raise ValueError("the dimension of the data is larger than"
                                      " three, please reduce dimension")
@@ -392,7 +428,7 @@ class FASTPLOT(Tk.Tk):
                 if data.data.ndim == 3:
                     datap = data
                     data = data[0].data
-                    print ("dispaly 0 slice along 0 dimension")
+                    print("dispaly 0 slice along 0 dimension")
                 if data.data.ndim > 3:
                     raise ValueError(
                             "the dimension of the data is"
@@ -402,7 +438,6 @@ class FASTPLOT(Tk.Tk):
             if data.__class__.__name__ == 'CubeList':
                 datap = data
                 data = data[0].data
-        #print (type(datap))
         self.wm_title(title)
         self.datap = datap
         self.datai = 0
@@ -412,34 +447,46 @@ class FASTPLOT(Tk.Tk):
         self.width = self.winfo_reqheight()
         self.figfr = Figureframe(self, (7, 7))
         self.leng = 0
+        failed = False
         if self.onedim:
             if isinstance(data, list):
                 self.indata = DATA1D(data, self.figfr)
             else:
                 self.indata = DATA1D([list(range(data.shape[0])), data], self.figfr)
         else:
-            self.indata = DATA2D(data, self.figfr)
-            self.coorfr = Coordinateframe(self, self.indata)
-            self.coorfr.grid(column=0, row=2, sticky="nsew")
-        self.fieldnr = self.datai
-        if self.datap is not None:
-            self.fieldfr = Fieldframe(self, self)
-            self.fieldfr.grid(column=0, row=0, sticky="nsew")
-        self.figfr.grid(column=0, row=1, sticky="nsew")
-        self.indata.makefig()
-        if self.datap is not None:
-            if self.datap.__class__.__name__ == "list":
-                self.newdata()
-        Tk.Grid.columnconfigure(self, 0, weight=1)
-        Tk.Grid.rowconfigure(self, 0, weight=0)
-        Tk.Grid.rowconfigure(self, 1, weight=1)
-        Tk.Grid.rowconfigure(self, 2, weight=0)
+            try:
+                self.indata = DATA2D(data, self.figfr)
+                self.coorfr = Coordinateframe(self, self.indata)
+                self.coorfr.grid(column=0, row=2, sticky="nsew")
+            except:
+                print("data not understood, maybe 0D?")
+                failed = True
+        if not failed:
+            self.fieldnr = self.datai
+            if self.datap is not None:
+                self.fieldfr = Fieldframe(self, self)
+                self.fieldfr.grid(column=0, row=0, sticky="nsew")
+            self.figfr.grid(column=0, row=1, sticky="nsew")
+            self.indata.makefig()
+            if self.datap is not None:
+                if self.datap.__class__.__name__ == "list":
+                    self.newdata()
+            Tk.Grid.columnconfigure(self, 0, weight=1)
+            Tk.Grid.rowconfigure(self, 0, weight=0)
+            Tk.Grid.rowconfigure(self, 1, weight=1)
+            Tk.Grid.rowconfigure(self, 2, weight=0)
 
     def button1(self):
+        '''
+        read in the field number from the field number field
+        '''
         self.datai = int(self.fieldfr.fldrn.get())
         self.newdata()
 
     def pone(self):
+        '''
+        add one from the field
+        '''
         self.datai = self.datai+1
         if self.leng > 1:
             self.indata.vecdata = self.vecdata[self.datai]
@@ -450,6 +497,9 @@ class FASTPLOT(Tk.Tk):
             self.newdata()
 
     def mone(self):
+        '''
+        subtract one from the field
+        '''
         self.datai = self.datai-1
         if self.leng > 1:
             self.indata.vecdata = self.vecdata[self.datai]
@@ -474,9 +524,9 @@ class FASTPLOT(Tk.Tk):
                 self.indata.data = self.datap[self.datai, :, :]
         if str(self.slice_along) == str(1):
             if self.datap.__class__.__name__ == "nimfile":
-                print ("this is not supported for nimfile")
+                print("this is not supported for nimfile")
             elif self.datap.__class__.__name__ == 'CubeList':
-                print ("this is not supported for CubeList")
+                print("this is not supported for CubeList")
             elif self.datap.__class__.__name__ == 'Cube':
                 self.indata.data = self.datap.data[:, self.datai, :]
             elif self.datap.__class__.__name__ in ['ndarray',
@@ -484,9 +534,9 @@ class FASTPLOT(Tk.Tk):
                 self.indata.data = self.datap[:, self.datai, :]
         if str(self.slice_along) == str(2):
             if self.datap.__class__.__name__ == "nimfile":
-                print ("this is not supported for nimfile")
+                print("this is not supported for nimfile")
             elif self.datap.__class__.__name__ == 'CubeList':
-                print ("this is not supported for CubeList")
+                print("this is not supported for CubeList")
             elif self.datap.__class__.__name__ == 'Cube':
                 self.indata.data = self.datap.data[:, :, self.datai]
             elif self.datap.__class__.__name__ in ['ndarray',

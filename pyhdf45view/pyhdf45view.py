@@ -3,78 +3,82 @@
 module to view hdf4/ hdf5/ netCDF files
 
 developed by: Martina M. Friedrich
-2017 -- 2018
+2017 -- 2019
 
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 '''
-
-
-
-import matplotlib
-import sys
-pyver = sys.version[0]
-if pyver is "2":
-    import Tkinter as Tk
-    import ttk
-    import tkFont
-    from tkFileDialog import askopenfilename
-    class dummy(object):
-        def __init__(self):
-            self.Dataset=dummy2
-    class dummy2(object):
-        def __init__(self):
-            pass
-        def close(self):
-            pass
-    netCDF4 = dummy()
-elif pyver is "3":
-    import tkinter as Tk
-    import tkinter.ttk as ttk
-    import tkinter.font as tkFont
-    try:
-        import netCDF4v132 as netCDF4
-    except:
-	    import netCDF4
-    from tkinter.filedialog import askopenfilename
-import h5py
-import Fastplot as Fp
-import numpy as np
 import os
 import copy
 import glob
 
+import sys
+# support for py2 has stopped, so do assume use of py3
+# pyver = sys.version[0]
 # if pyver is "2":
-#sys.path.append(
-# "/home/martinaf/python/lib/python2.7/site-packages/python_hdf4-0.9-py2.7-linux-x86_64.egg") 
-# try using the pyhdf version installed on the system for py26.
-# the fix they have does not work.
-import pyhdf.SD  # due to bug when variable lengths long, need this version:
+#    import Tkinter as Tk
+#    import ttk
+#    import tkFont
+#    from tkFileDialog import askopenfilename
+#    class dummy(object):
+#        def __init__(self):
+#            self.Dataset = dummy2
+#    class dummy2(object):
+#        def __init__(self):
+#            pass
+#        def close(self):
+#            pass
+#    netCDF4 = dummy()
+#elif pyver is "3":
+import tkinter as Tk
+import tkinter.ttk as ttk
+import tkinter.font as tkFont
+import matplotlib
+# try:
+#     import netCDF4v132 as netCDF4  # some fix done locally, ignore otherwise
+# except:
+import netCDF4
+from tkinter.filedialog import askopenfilename
+import h5py
+
+import pyhdf.SD
 import pyhdf.HDF
 import pyhdf.V
 import pyhdf.VS
 import pyhdf.SD
+import Fastplot as Fp
+from Fastplot import HELPWIN, center
+import numpy as np
+
+
+# if pyver is "2":
+# sys.path.append(
+# "/home/martinaf/python/lib/python2.7/site-packages/python_hdf4-0.9-py2.7-linux-x86_64.egg")
+# try using the pyhdf version installed on the system for py26.
+# the fix they have does not work.
+
+# due to bug when variable lengths long, need this version:
 # https://github.com/fhs/python-hdf4/commit/1ad85ef17a194b62bbe5c6c3eeda12b55b6666ae
 # careful, I changed something in there, so I could compile it with pyinstaller
 # If this is not desired, no extra fix needed.
-#sys.path.append("/home/martinaf/.local/lib/python2.7/site-packages")
+# sys.path.append("/home/martinaf/.local/lib/python2.7/site-packages")
 
-#print ("h5py version ", h5py.__version__)
-#print ("numpy version ", np.__version__)
-#print ("matplotlib version", matplotlib.__version__)
-#print ("ttk version", ttk.__version__)
+# print ("h5py version ", h5py.__version__)
+# print ("numpy version ", np.__version__)
+# print ("matplotlib version", matplotlib.__version__)
+# print ("ttk version", ttk.__version__)
 
 HDFFILEENDINGLIST=["*.hdf",
                    "*.he5",
@@ -94,31 +98,10 @@ HDFFILEENDINGLIST=["*.hdf",
                    "*.H4",
                    "*.HDF5",
                    "*.HDF4",
-                   ]
+                  ]
 
-def center(toplevel, size= None):
-    toplevel.update_idletasks()
-    w = toplevel.winfo_screenwidth()
-    h = toplevel.winfo_screenheight()
-    if size is None:
-        size = tuple(2*int(_) for _
-                     in toplevel.geometry().split('+')[0].split('x'))
-    x = w/2 - size[0]/2
-    y = h/2 - size[1]/2
-    toplevel.geometry("%dx%d+%d+%d" % (size + (x, y)))
-    return
 
-class HELPWIN:
-    def __init__(self, mtitle, mco="red"):
-        self.helpw = Tk.Toplevel(background=mco)
-        self.helpw.wm_title(mtitle)
-        self.txt = Tk.Label(self.helpw, bg=mco,justify="left")
-        self.txt.pack(side="left")
 
-    def configtext(self, mtext):
-        self.txt.configure(text=mtext)
-        center(self.helpw)
-        return
 
 
 class handlegroup(object):
@@ -140,13 +123,9 @@ class handlegroup(object):
                     keylist = list(mobject.variables.keys())
                 except:
                     keylist = []
-        #idxlist = np.argsort(np.array(keylist))
-        #print (idxlist)
         keylist.sort()
         for key in keylist:
-            #key = keylist[idx]
             if hdfflag is "eos":
-                #print (key)
                 kn = key[0]
                 typ = key[1]
                 if typ == pyhdf.V.HC.DFTAG_VG:
@@ -165,7 +144,7 @@ class handlegroup(object):
                 #print (key)
                 # need to extract key from here
             if hdfflag is 5:
-                mname  = mobject[key].parent.name[1:]
+                mname = mobject[key].parent.name[1:]
             else:
                 try:
                     if pname is not None:
@@ -186,74 +165,67 @@ class handlegroup(object):
                 newname  = key
             if hdfflag is 5:
                 if isinstance(mobject[key], h5py.Group):
-                        if parent is "1":
-                            tree.insert(parent, "end", newname, text=key,
-                                        values =
-                                        ("","","",
-                                         list(mobject[key].attrs.keys())))
-                        else:
-                            tree.insert(mname, "end", newname, text=key,
-                                        values =
-                                        ("","","",
-                                         list(mobject[key].attrs.keys())))
+                    if parent is "1":
+                        tree.insert(
+                            parent, "end", newname, text=key,
+                            values=("", "", "", list(mobject[key].attrs.keys())))
+                    else:
+                        tree.insert(
+                            mname, "end", newname, text=key,
+                            values=("", "", "", list(mobject[key].attrs.keys())))
                 else:
+                    try:
+                        dty = mobject[key].dtype
+                    except:
                         try:
-                            dty = mobject[key].dtype
+                            dty = type(mobject[key])
                         except:
-                            try:
-                                dty = type(mobject[key])
-                            except:
-                                pass  # need eos impl.
+                            pass  # need eos impl.
+                    try:
+                        ndim = mobject[key].value.ndim
+                    except:
+                        ndim = 0
+                    try:
+                        dims = mobject[key].maxshape
+                    except:
+                        dims = []  # need eos impl.
+                    if parent is "1":
                         try:
-                            ndim = mobject[key].value.ndim
+                            tree.insert(
+                                parent, "end", newname, text=key, 
+                                values=(ndim, dims , dty, list(mobject[key].attrs.keys())))
                         except:
-                            try: 
-                                f=g #need eos impl.
-                            except:
-                                ndim = 0
+                            pass  # need eos impl.
+                    else:
                         try:
-                            dims = mobject[key].maxshape
+                            tree.insert(
+                                mname, "end", newname, text=key,
+                                values=(ndim, dims , dty, list(mobject[key].attrs.keys())))
                         except:
-                            dims = []  # need eos impl.
-                        if parent is "1":
-                            try:
-                                tree.insert(
-                                    parent, "end", newname, text=key, values=
-                                    (ndim, dims , dty,
-                                    list(mobject[key].attrs.keys())))
-                            except:
-                                pass  # need eos impl.
-                        else:
-                            try:
-                                tree.insert(
-                                    mname, "end", newname, text=key, values=
-                                    (ndim, dims , dty,
-                                    list(mobject[key].attrs.keys())))
-                            except:
-                                pass
+                            pass
                 try:
-                    d=handlegroup(tree, mname, mobject[key], hdfflag)
+                    d = handlegroup(tree, mname, mobject[key], hdfflag)
                 except Exception as e:
-                        pass
+                    pass
             elif hdfflag is "eos":
                 if parent is "1":
-                        try:
-                            tree.insert(parent, "end", newname, text=key,
-                                        values=
-                                        (rank, dims , stype, list(mobject.get_info(kn)[0].keys()), kn, typ))
-                        except Exception as e:
-                            print ("l246: ", e)
+                    try:
+                        tree.insert(
+                            parent, "end", newname, text=key,
+                            values=(rank, dims , stype, list(mobject.get_info(kn)[0].keys()), kn, typ))
+                    except Exception as e:
+                        print ("l235: ", e)
                 else:
-                            try:
-                                tree.insert(mname, "end", newname, text=key,
-                                            values=
-                                            (rank, dims , stype, list(mobject.get_info(kn)[0].keys()),kn, typ))
-                            except Exception as E:
-                                tree.insert(mname.split("/")[-1], newname,
-                                            text=key,values=
-                                            (rank, dims , stype, [], kn,typ))
+                    try:
+                        tree.insert(
+                            mname, "end", newname, text=key,
+                            values=(rank, dims , stype, list(mobject.get_info(kn)[0].keys()),kn, typ))
+                    except Exception as E:
+                        tree.insert(mname.split("/")[-1], newname,
+                                    text=key,
+                                    values=(rank, dims , stype, [], kn,typ))
                 try:
-                    d=handlegroup(tree, mname, mobject,hdfflag, newname, kn)
+                    d = handlegroup(tree, mname, mobject, hdfflag, newname, kn)
                 except:
                     pass
             else:
@@ -263,47 +235,48 @@ class handlegroup(object):
                     atlist = []
                 if isinstance(mobject[key], netCDF4._netCDF4.Group):
                     if parent is "1":
-                            tree.insert(parent, "end", newname, text=key,
-                                        values= ("", "" , "",atlist))
+                        tree.insert(
+                            parent, "end", newname, text=key,
+                            values=("", "" , "", atlist))
                     else:
-                            try:
-                                tree.insert(mname, "end", newname, text=key,
-                                            values= ("", "" , "", atlist))
-                            except Exception as E:
-                                tree.insert(mname.split("/")[-1], newname, text=key,
-                                            values= ("", "" , "", atlist))
+                        try:
+                            tree.insert(mname, "end", newname, text=key,
+                                        values=("", "" , "", atlist))
+                        except Exception as E:
+                            tree.insert(mname.split("/")[-1], newname, text=key,
+                                        values=("", "", "", atlist))
                 else:
+                    try:
+                        dty = mobject[key].dtype
+                    except:
+                        dty = type(mobject[key])
+                    try:
+                        ndim = mobject[key].ndim
+                    except:
+                        ndim = 0
+                    try:
+                        dims = mobject[key].shape
+                    except:
+                        dims = []
+                    if parent is "1":
                         try:
-                            dty = mobject[key].dtype
+                            tree.insert(
+                                parent, "end", newname, text=key,
+                                values=(ndim, dims, dty, atlist))
                         except:
-                            dty = type(mobject[key])
+                            tree.insert(
+                                parent, "end", newname, text=key,
+                                values=(ndim, dims, dty,[]))
+                    else:
                         try:
-                            ndim = mobject[key].ndim
+                            tree.insert(
+                                mname, "end", newname, text=key,
+                                values=(ndim, dims, dty, atlist))
                         except:
-                            ndim = 0
-                        try:
-                            dims = mobject[key].shape
-                        except:
-                            dims = []
-                        if parent is "1":
-                            try:
-                                tree.insert(
-                                    parent, "end", newname, text=key, values=
-                                    (ndim, dims , dty, atlist))
-                            except:
-                                tree.insert(
-                                    parent, "end", newname, text=key, values=
-                                    (ndim, dims , dty,[]))
-                        else:
-                            try:
-                                tree.insert(
-                                    mname, "end", newname, text=key, values=
-                                    (ndim, dims , dty, atlist))
-                            except:
-                                tree.insert(
-                                    mname, "end", newname, text=key, values=
-                                    (ndim, dims , dty,[]))
-                d=handlegroup(tree, newname, mobject[key], hdfflag, newname)
+                            tree.insert(
+                                mname, "end", newname, text=key,
+                                values=(ndim, dims, dty, []))
+                d = handlegroup(tree, newname, mobject[key], hdfflag, newname)
 
 
 class App(object):
@@ -322,7 +295,7 @@ class App(object):
         filemenu.add_command(label="Open", command=self.newfile)
         filemenu.add_command(label="Next", command=self.nextfile)
         filemenu.add_command(label="Previous", command=self.previousfile)
-        ms.config(menu=filemenu)  # menubar)
+        ms.config(menu=filemenu)
         table.pack(fill='both', expand=True)
         self.xdata = dataobj(None, "")
         self.ydata = dataobj(None, "")
@@ -330,7 +303,7 @@ class App(object):
         self.yerr = dataobj(None, "")
         self.hold = False
         self.tree = ttk.Treeview(columns=["dimension", "shape", "type",
-                                          "attributes", "ref","typ"])
+                                          "attributes", "ref", "typ"])
         vsb = ttk.Scrollbar(orient="vertical", command=self.tree.yview)
         hsb = ttk.Scrollbar(orient="horizontal", command=self.tree.xview)
         self.tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
@@ -369,7 +342,7 @@ class App(object):
         self.button_hold = Tk.Button(buttonframe,
                                      text="hold off", command=self.holdfunc)
         self.button_clear = Tk.Button(buttonframe,
-                                     text="clear", command=self.clearall)
+                                      text="clear", command=self.clearall)
         self.textx.pack(side="left")
         self.button_x.pack(side="left")
         self.button_error_x.pack(side="left")
@@ -382,13 +355,11 @@ class App(object):
         self.focus = "off"
 
     def loadnewfile(self, thisfilename):
-        # print (type(thisfilename))
-        # print (len(thisfilename))
         # reset the reflist handlegroup class.
         handlegroup.reflist = []
         self.ms.wm_title(thisfilename)
         self.ms.wm_iconname(thisfilename.split("/")[-1])
-        print ("this file: ", thisfilename)
+        print("this file: ", thisfilename)
         ending = thisfilename.split("/")[-1].split(".")[-1]
         if isinstance(self.mfile, h5py.File):
             self.mfile.close()
@@ -407,7 +378,7 @@ class App(object):
                 except:
                     self.mfile = h5py.File(thisfilename)
                     self.hdfflag = 5
-            elif "nc" in ending and pyver is "3":
+            elif "nc" in ending:
                 self.mfile = netCDF4.Dataset(thisfilename)
                 self.hdfflag = "netcdf"
             elif "5" in ending:
@@ -417,7 +388,7 @@ class App(object):
                 self.mfile = hdf4_object(thisfilename)
                 self.hdfflag = "eos"
         except Exception as eee:
-            print (eee)
+            print(eee)
             try:
                 self.mfile = netCDF4.Dataset(thisfilename)
                 self.hdfflag = "netcdf"
@@ -430,7 +401,6 @@ class App(object):
 
     def makefilelist(self):
         mlist = []
-        #print self.mfilename
         try:
             currentpath = "/".join(self.mfilename.split("/")[:-1])+"/"
         except:
@@ -438,10 +408,9 @@ class App(object):
         if currentpath is "/":
             currentpath = os.getcwd() + "/"
         for ending in HDFFILEENDINGLIST:
-            mlist=mlist+(glob.glob(currentpath+ending))
+            mlist = mlist+(glob.glob(currentpath+ending))
         mlist.sort()
         self.mfilename = currentpath + self.mfilename.split("/")[-1]
-        #print mlist
         return mlist
 
     def previousfile(self):
@@ -456,8 +425,6 @@ class App(object):
         try:
             self.mfilename = self.mlist[now+1]
         except IndexError as Exc:
-            #warning=HELPWIN("load error")
-            #warning.configtext(Exc.message)
             self.mfilename = self.mlist[0]
         self.loadnewfile(self.mfilename)
         self.connectnewfile()
@@ -474,20 +441,16 @@ class App(object):
             mtext = ""
         if self.hdfflag == 5:
             self.tree.insert("", 0, zero, text=mtext,
-                             values=( "", "", "", list(
-                             		 self.mfile.attrs.keys())))
+                             values=("", "", "", list(self.mfile.attrs.keys())))
             mparent = self.mfile
             mname = zero
             d = handlegroup(self.tree, mname, mparent, self.hdfflag)
         elif self.hdfflag == 4:
-            self.tree.insert("", 0, zero, text=mtext, values=
-                             ( "", "", "", list(self.mfile.attributes().keys())))
-            #idxlist = np.argsort(np.array(self.mfile.datasets().keys()))
+            self.tree.insert(
+                "", 0, zero, text=mtext,
+                values=( "", "", "", list(self.mfile.attributes().keys())))
             keys = (self.mfile.datasets().keys())
-            #print (idxlist)
-            for key in keys:  #, self.mfile.datasets().keys()):
-                #key = list(self.mfile.datasets().keys())[idx]
-                # print "key", key
+            for key in keys:
                 ndim = self.mfile.select(key).info()[1]
                 dims = self.mfile.select(key).info()[2]
                 if isinstance(dims, list):
@@ -496,19 +459,18 @@ class App(object):
                     dims = str(dims)
                 mtype = self.mfile.select(key).get().dtype
                 matts = (", ".join(list(self.mfile.select(key).attributes().keys())))
-                self.tree.insert(zero, "end", key, text=key, values=
-                                (str(ndim), dims, mtype, matts))
+                self.tree.insert(zero, "end", key, text=key,
+                                 values=(str(ndim), dims, mtype, matts))
         elif self.hdfflag == "netcdf":
             self.tree.insert("", 0, zero, text=mtext,
-                             values=( "", "", "", list(
-                                    self.mfile.ncattrs())))
+                             values=("", "", "", list(self.mfile.ncattrs())))
             mparent = self.mfile
             mname = zero
             d = handlegroup(self.tree, mname, mparent, self.hdfflag)
         elif self.hdfflag == "eos":
-            self.tree.insert("",0,zero,text=mtext,
-                             values=("","","", list(self.mfile.sd.attributes().keys())))
-            d = handlegroup(self.tree, zero, self.mfile, self.hdfflag,reftr=-1)
+            self.tree.insert("", 0, zero, text=mtext,
+                             values=("", "", "", list(self.mfile.sd.attributes().keys())))
+            d = handlegroup(self.tree, zero, self.mfile, self.hdfflag, reftr=-1)
         try:
             self.tree.item(zero, open=True)
         except:
@@ -520,7 +482,6 @@ class App(object):
         self.loadnewfile(name)
         self.connectnewfile()
         self.mlist = self.makefilelist()
-        # self.ms.title = name  # not working
         return
 
     def clearall(self):
@@ -536,11 +497,11 @@ class App(object):
         if self.hold:
             self.hold = False
             self.button_hold["text"] = "hold off"
-            self.button_hold.configure(bg = "lightgray")
+            self.button_hold.configure(bg="lightgray")
         else:
             self.hold = True
             self.button_hold["text"] = "hold on"
-            self.button_hold.configure(bg = "red")
+            self.button_hold.configure(bg="red")
         return
 
     def makeplot(self):
@@ -556,35 +517,35 @@ class App(object):
     def getx(self):
         if not self.focus is "on_x":
             self.button_x["text"] = "focus is on x"
-            self.button_x.configure(bg = "red")
+            self.button_x.configure(bg="red")
             self.button_y["text"] = "capture y"
-            self.button_y.configure(bg = "lightgray")
+            self.button_y.configure(bg="lightgray")
             self.button_error_x["text"] = "capture err x"
-            self.button_error_x.configure(bg = "lightgray")
+            self.button_error_x.configure(bg="lightgray")
             self.button_error_y["text"] = "capture err y"
-            self.button_error_y.configure(bg = "lightgray")
+            self.button_error_y.configure(bg="lightgray")
             self.focus = "on_x"
         else:
             self.focus = "off"
             self.button_x["text"] = "capture x"
-            self.button_x.configure(bg = "lightgray")
+            self.button_x.configure(bg="lightgray")
         return
 
     def gety(self):
         if not self.focus is "on_y":
             self.button_y["text"] = "focus is on y"
-            self.button_y.configure(bg = "red")
+            self.button_y.configure(bg="red")
             self.button_x["text"] = "caputre x"
-            self.button_x.configure(bg = "lightgray")
+            self.button_x.configure(bg="lightgray")
             self.button_error_x["text"] = "capture err x"
-            self.button_error_x.configure(bg = "lightgray")
+            self.button_error_x.configure(bg="lightgray")
             self.button_error_y["text"] = "capture err y"
-            self.button_error_y.configure(bg = "lightgray")
+            self.button_error_y.configure(bg="lightgray")
             self.focus = "on_y"
         else:
             self.focus = "off"
             self.button_y["text"] = "caputre y"
-            self.button_y.configure(bg = "lightgray")
+            self.button_y.configure(bg="lightgray")
         return
 
     def geterrory(self):
@@ -645,19 +606,22 @@ class App(object):
             data = np.array(self.mfile.get_data(refnumber)[:])
             key = item[0].split("/")[-1]
         else:
-            item = self.tree.selection()[0]
-            keys = item.split("/")
-            mdata = self.mfile
-            for key in keys[:-1]:
-                mdata = mdata[key]
-            key = keys[-1]
-            if self.hdfflag == 5 :
-                data = mdata[key].value
-            if self.hdfflag == "netcdf":
-                data = mdata.variables[key][:]
-            elif self.hdfflag == 4:
-                data = self.mfile.select(key)[:]
-        #if data.ndim >= 2:
+            try:
+                item = self.tree.selection()[0]
+                keys = item.split("/")
+                mdata = self.mfile
+                for key in keys[:-1]:
+                    mdata = mdata[key]
+                key = keys[-1]
+                if self.hdfflag == 5:
+                    data = mdata[key].value
+                if self.hdfflag == "netcdf":
+                    data = mdata.variables[key][:]
+                elif self.hdfflag == 4:
+                    data = self.mfile.select(key)[:]
+            except:
+                print("try to plot something that is not data")
+                return
         mfig = Fp.FASTPLOT(data, title=key)
         return
 
@@ -681,62 +645,56 @@ class App(object):
             else:
                 key = None
         if self.hdfflag == 5:
-            print ("\n")
-            print ("info on: ", key)
-            print ("----------" )
-            print ("atrs:", list(mdat.attrs))
-            print ("   -------")
+            print("\n")
+            print("info on: ", key)
+            print("----------")
+            print("atrs:", list(mdat.attrs))
+            print("   -------")
             for keys in mdat.attrs.keys():
                 try:
-                    print (keys, ": ", mdat.attrs[keys])
+                    print(keys, ": ", mdat.attrs[keys])
                 except:
-                    print (keys, " string, due to incompatibility not displayable")
-            print (mdat)
-            #self.attr_frame = Attributewindow(mdat.attrs, key)
+                    print(keys, " string, due to incompatibility not displayable")
         elif self.hdfflag == "netcdf":
             try:
-                print ("\n")
-                print ("info on: ", mdat.name)
+                print("\n")
+                print("info on: ", mdat.name)
             except:
                 try:
-                    print ("info on: ", mdat.title)
+                    print("info on: ", mdat.title)
                 except:
-                    print ("info on: ", mdat.filepath())
-            print ("---------")
-            print (mdat)
-            print ("---------\n")
+                    print("info on: ", mdat.filepath())
+            print("---------")
+            print(mdat)
+            print("---------\n")
         elif self.hdfflag == 4:
             if key is None:
-                print ("\ninfo on main ")
-                print ("attribute  name:  value")
+                print("\ninfo on main ")
+                print("attribute  name:  value")
                 mdict = self.mfile.attributes()
             else:
-                print ("\ninfo on: ", key)
-                print ("attribute  name:  value")
+                print("\ninfo on: ", key)
+                print("attribute  name:  value")
                 mdict = self.mfile.select(key).attributes()
             try:
-                    keylist = list(mdict.keys())
-                    idxlist = np.argsort(np.array(keylist))
-                    #print (keylist, mdict)
-                    for idx in idxlist:
-                        key = keylist[idx]
-                        try:
-                            print (key, ":\t", mdict[key])
-                        except Exception as E:
-                            print (E)
-                    #self.attr_frame = Attributewindow(
-                    #    self.mfile.select(key).attributes(), key)
+                keylist = list(mdict.keys())
+                idxlist = np.argsort(np.array(keylist))
+                for idx in idxlist:
+                    key = keylist[idx]
+                    try:
+                        print(key, ":\t", mdict[key])
+                    except Exception as E:
+                        print(E)
             except:
-                    pass
-                    #self.attr_frame = Attributewindow(self.mfile.attributes(), key)
-            print ("---------\n")
+                pass
+            print("---------\n")
         elif self.hdfflag == "eos":
-            print ("info on: ", key)
-            print ("---------")
+            print("info on: ", key)
+            print("---------")
             for xkey in mdata[0].keys():
-                print (xkey, ": ", mdata[0][xkey])
-            print (mdata[1])
-            print ("")
+                print(xkey, ": ", mdata[0][xkey])
+            print(mdata[1])
+            print("")
         return
 
     def OffClick2(self, event):
@@ -756,10 +714,10 @@ class hdf4_object(object):
     def get_structure(self):
         mref = -1
         reflist = {}
-        reflist[-1] =[]
+        reflist[-1] = []
         reflist_done = []
         while True:
-            try: 
+            try:
                 mref = self.v.getid(mref)
                 if mref in reflist_done:
                     continue
@@ -777,11 +735,9 @@ class hdf4_object(object):
         refsdone = []
         for tag, ref in allmem:
             if tag == pyhdf.HDF.HC.DFTAG_VH:
-                #arglist.append(self.vs.attach(ref).inquire()[-1])
                 arglist.append((ref, tag))
             if tag == pyhdf.HDF.HC.DFTAG_NDG:
                 arglist.append((ref, tag))
-            #        self.sd.select(self.sd.reftoindex(ref)).info()[0])
             if tag == pyhdf.HDF.HC.DFTAG_VG:
                 in_there, refm = self.get_structure2(ref, reflist)
                 refsdone.append(refm)
@@ -807,14 +763,12 @@ class hdf4_object(object):
             try:
                 a = self.vs.attach(ref)
                 attributes = a.attrinfo()
-                otherinfo = a.inquire()  
-                # number records, interlace mode, lisf of field names, size in bytes, name of vdata
+                otherinfo = a.inquire()
             except:
                 try:
                     a = self.sd.select(self.sd.reftoindex(ref))
                     attributes = a.attributes()
                     otherinfo = a.info()
-                    # name, rank, shape, dimension, type, attributes
                 except:
                     try:
                         a = self.v.attach(ref)
@@ -828,15 +782,15 @@ class hdf4_object(object):
     def get_name(self, tag, ref):
         dims = rank = name = stype = None
         if tag == pyhdf.HDF.HC.DFTAG_VH:
-            dims, rank, stype, trash, name =  (self.vs.attach(ref).inquire())
+            dims, rank, stype, trash, name = (self.vs.attach(ref).inquire())
         elif tag == pyhdf.HDF.HC.DFTAG_NDG:
-            name, rank, dims, stype, nattrs =  (self.sd.select(self.sd.reftoindex(ref)).info())
+            name, rank, dims, stype, nattrs = (self.sd.select(self.sd.reftoindex(ref)).info())
         elif tag == pyhdf.HDF.HC.DFTAG_VG:
-            name =  (self.v.attach(ref)._name)
+            name = self.v.attach(ref)._name
         return name, dims, rank, stype
 
 class Attributewindow(object):
-    def __init__(self, mdict, title,master=None, hdfv=None):
+    def __init__(self, mdict, title, master=None, hdfv=None):
         self.root = Tk.Toplevel()
         try:
             center(self.root, (350, 32*(1+len(list(mdict.keys())))))
@@ -847,10 +801,10 @@ class Attributewindow(object):
         pframe.pack(fill='both', expand=True)
         try:
             tree = ttk.Treeview(pframe, columns=["name", "content"],
-                            show="headings", height = 16 * len(list(mdict.keys())))
+                            show="headings", height=16*len(list(mdict.keys())))
         except:
             tree = ttk.Treeview(pframe, columns=["name", "content"],
-                            show="headings", height = 16 * len(mdict))
+                            show="headings", height=16*len(mdict))
         tree.pack(expand=True)
         maxwidth1 = tkFont.Font().measure("attribute name")
         maxwidth2 = tkFont.Font().measure("attribute value")
@@ -861,8 +815,8 @@ class Attributewindow(object):
         except:
             try:
                 maxwidth1 = max(
-                max([tkFont.Font().measure(jj) for jj in mdict]),
-                maxwidth1)
+                    max([tkFont.Font().measure(jj) for jj in mdict]),
+                    maxwidth1)
             except:
                 pass
         try:
@@ -872,42 +826,40 @@ class Attributewindow(object):
         except:
             try:
                 maxwidth2 = max(
-                max([tkFont.Font().measure(mdict[jj]) for jj in mdict]),
-                maxwidth2)
+                    max([tkFont.Font().measure(mdict[jj]) for jj in mdict]),
+                    maxwidth2)
             except:
                 pass
-        tree.column("name", width = maxwidth1)
-        tree.column("content", width = maxwidth2)
-        # tree.pack(side="top", expand=True)  #, in_=self.pframe)
+        tree.column("name", width=maxwidth1)
+        tree.column("content", width=maxwidth2)
         tree.heading("name", text="attribute name")
         tree.heading("content", text="attribute value")
-        print ("-- ", title, " --")
-        print ("  name, value")
+        print("-- ", title, " --")
+        print("  name, value")
         try:
             keylist = list(mdict.keys())
             idxlist = np.argsort(np.array(keylist))
-            #print (keylist, mdict)
             for idx in idxlist:
                 key = keylist[idx]
                 try:
                     tree.insert("", "end", key, values=(key, mdict[key]))
-                    print (key, mdict[key])
+                    print(key, mdict[key])
                 except OSError:  # python 3
-                    print (key, "string, due to netCDF4 h5py incompatibility not displayable")
+                    print(key, "string, due to netCDF4 h5py incompatibility not displayable")
                 except IOError:
-                    print (key, "string, due to netCDF4 h5py incompatibility not displayable")
+                    print(key, "string, due to netCDF4 h5py incompatibility not displayable")
         except:
-            print (mdict.keys())
+            print(mdict.keys())
             _ = input("d")
             keylist = mdict
             for key in keylist:
-                print (key)
+                print(key)
         try:
             mval = eval("master."+key)
         except:
             mval = eval("master.getncattr("+key+")")
-            print (key, mval)
-            tree.insert("","end",key, values=(key,mval))
+            print(key, mval)
+            tree.insert("", "end", key, values=(key, mval))
     def destroy(self):
         self.root.destroy()
         return
@@ -929,14 +881,14 @@ class FASTPLOT1D(object):
         if xerr is None:
             xerr = dataobj(None, "")
         try:
-            line  = self.plotframe.a.errorbar(
+            line = self.plotframe.a.errorbar(
                 xdata.data, ydata.data, yerr.data, xerr.data,
                 label=xdata.title + " vs " + ydata.title)
         except Exception as ex:
-            line = self.plotframe.a.plot(xdata.data,ydata.data,
+            line = self.plotframe.a.plot(xdata.data, ydata.data,
                                          label=xdata.title + " vs " + ydata.title)
         self.plotframe.a.legend()
-        self.plotframe.canvas.show()
+        self.plotframe.canvas.draw()
         self.plotframe.toolbar.update()
         maniframe = changelineplot(self, self.manipframe, line)
         return line
@@ -953,7 +905,7 @@ class changelineplot(object):
         self.ez2 = Tk.Entry(maniframe, width=50)
         self.ez2.pack(side="left")
         self.ez2.focus_set()
-        button1 = Tk.Button(maniframe,text="get",command=self.getdata)
+        button1 = Tk.Button(maniframe, text="get", command=self.getdata)
         button1.pack(side="left")
         button2 = Tk.Button(maniframe, text="help", command=self.mhelp)
         button2.pack(side="left")
@@ -997,7 +949,7 @@ class changelineplot(object):
                 except:
                     pass
         self.master.plotframe.a.legend()
-        self.master.plotframe.canvas.show()
+        self.master.plotframe.canvas.draw()
         return
 
     def getdata(self):
@@ -1007,43 +959,46 @@ class changelineplot(object):
 
     def processtext(self, text):
         mtext = text.split(",")
-        self.legend=self.master.plotframe.a.legend()
-        for entry in mtext:
-            key, value = entry.split("=")
-            key = key.strip(" ")
-            value = value.strip(" ")
-            if "linecolor" in key:
-                for line in self.obj:
-                    try:
-                        line.set_color(value)
-                    except:
+        self.legend = self.master.plotframe.a.legend()
+        try:
+            for entry in mtext:
+                key, value = entry.split("=")
+                key = key.strip(" ")
+                value = value.strip(" ")
+                if "linecolor" in key:
+                    for line in self.obj:
                         try:
-                            line[0].set_color(value)
+                            line.set_color(value)
                         except:
-                            pass
-            if "markercolor" in key:
-                self.line.set_markerfacecolor(value)
-                self.line.set_markeredgecolor(value)
-            if key in "marker":
-                self.line.set_marker(value)
-            if "width" in key:
-                try:
-                    self.line.set_linewidth(float(value))
-                except Exception as e:
-                	print (e)
-            if "style" in key:
-                self.line.set_linestyle(value)
-            if "size" in key:
-                self.line.set_markersize(float(value))
-            if "delete" in key:
-                self.line.remove()
-                self.obj.set_label("_nolegend_")
-                self.legend.remove()
-            if "label" in key:
-                #self.master.plotframe.a.legend
-                self.obj.set_label(value)
-        self.legend=self.master.plotframe.a.legend()
-        self.master.plotframe.canvas.show()
+                            try:
+                                line[0].set_color(value)
+                            except:
+                                pass
+                if "markercolor" in key:
+                    self.line.set_markerfacecolor(value)
+                    self.line.set_markeredgecolor(value)
+                if key in "marker":
+                    self.line.set_marker(value)
+                if "width" in key:
+                    try:
+                        self.line.set_linewidth(float(value))
+                    except Exception as e:
+                        print (e)
+                if "style" in key:
+                    self.line.set_linestyle(value)
+                if "size" in key:
+                    self.line.set_markersize(float(value))
+                if "delete" in key:
+                    self.line.remove()
+                    self.obj.set_label("_nolegend_")
+                    self.legend.remove()
+                if "label" in key:
+                    self.obj.set_label(value)
+        except ValueError as err:
+            print(str(err) + " consider reading help")
+            HELPWIN("adjusting problem").configtext(str(err) + " consider reading help")
+        self.legend = self.master.plotframe.a.legend()
+        self.master.plotframe.canvas.draw()
         return
 
 
@@ -1070,19 +1025,18 @@ class ButtonFrame(object):
             mframe, from_=0, to=2, orient="horizontal", command=self.update)
         self.sliceslider.pack(side="right")
         self.fieldtxt = Tk.Label(
-                mframe, text="slice along dimension: ")
+            mframe, text="slice along dimension: ")
         self.fieldtxt.pack(side="right")
 
     def update(self, val):
         val = str(val)
-        if val =="2":
+        if val == "2":
             self.orient = 2
-        elif val =="1":
+        elif val == "1":
             self.orient = 1
         elif val == "0":
             self.orient = 0
         self.reconfigview()
-
 
     def plus(self):
         self.value = self.value + 1
@@ -1099,9 +1053,9 @@ class ButtonFrame(object):
         if self.orient == 0:
             self.master.data = self.master.datao[self.value]
         elif self.orient == 1:
-            self.master.data = self.master.datao[:,self.value,:]
+            self.master.data = self.master.datao[:, self.value, :]
         elif self.orient == 2:
-            self.master.data = self.master.datao[:,:,self.value]
+            self.master.data = self.master.datao[:, :, self.value]
         self.master.process_raw_data(self.master.data,
                                      self.master.mtitle)
         self.master.configure(self.master.mtitle)
@@ -1124,17 +1078,16 @@ class MTable():
         self.mtitle = mkey
         self.pframe.pack(fill="both", expand=True)
         try:
-            print(mkey)
-            print(self.datao.shape)
+            print("KEY: ", mkey)
             self.process_data(self.datao, mkey)
             self.data = self.datao
         except AttributeError as Eee:
-            print (Eee)
+            print(Eee)
             if master.hdfflag == 5 or master.hdfflag == "netcdf":
                 try:
                     ndim = self.datao.value.ndim
                 except AttributeError:
-                    try: 
+                    try:
                         ndim = self.datao.ndim
                     except:
                         ndim = 0
@@ -1156,12 +1109,12 @@ class MTable():
                 try:
                     self.datao = np.squeeze(self.datao[:])
                 except Exception as exc:
-                    print (exc)
+                    print(exc)
                     self.datao = np.squeeze(self.datao)
                     print("squeeze failed")
                     print("************************************************")
-                print ("after squeeze", self.datao.shape)
-                if len(self.datao.shape)==3:
+                print("after squeeze", self.datao.shape)
+                if len(self.datao.shape) == 3:
                     if self.master.hdfflag == 5 or self.master.hdfflag == "netcdf":
                         self.data = self.datao[0]
                     elif self.master.hdfflag == 4 or self.master.hdfflag == "eos":
@@ -1170,14 +1123,14 @@ class MTable():
                     self.extraframe.grid(column=2, row=0)
                     self.newframe = ButtonFrame(self)
                     self.process_raw_data(self.data, mkey)
-                elif len(self.datao.shape)==2:
+                elif len(self.datao.shape) == 2:
                     if self.master.hdfflag == 5 or self.master.hdfflag == "netcdf":
                         self.data = self.datao
                         self.process_raw_data(self.datao, mkey)
                     elif self.master.hdfflag == 4 or self.master.hdfflag == "eos":
                         self.data = self.datao[:]
                         self.process_raw_data(self.data, mkey)
-                elif len(self.datao.shape)>3:
+                elif len(self.datao.shape) > 3:
                     print("data has shape: ", self.datao.shape, "too high dimension to display")
         try:
             self.configure(mkey)
@@ -1189,9 +1142,6 @@ class MTable():
         try:
             allkeys = tuple(list(data.value.dtype.fields.keys()))
         except Exception as exc:
-            print (exc)
-            print (data.shape)
-            print("key:", mkey)
             try:
                 allkeys = tuple(range(len(data.value)))
             except TypeError:
@@ -1204,6 +1154,7 @@ class MTable():
         try:
             for idx, line in enumerate(data.value):
                 mline = [line[key] for key in allkeys]
+                print("mline: ", mline)
                 self.tree.insert("", idx, str(idx), text=str(idx), values=mline)
         except:
             mline = []
@@ -1215,24 +1166,26 @@ class MTable():
         try:
             ndim = data.ndim
         except:
-            ndim = data.value.ndim
+            try:
+                ndim = data.value.ndim
+            except:
+                return  # not data but group or so
         if ndim == 2:
-            if data.shape[1]>0:
-                # print("data shape", data.shape)
+            if data.shape[1] > 0:
                 self.tree = ttk.Treeview(  # this is for 2D matrix
                     columns=list(range(data.shape[1])), show="headings")
                 for idx in list(range(data.shape[1])):
                     self.tree.heading(idx, text=str(idx),
-                                    command=lambda c=idx: self.OnClick(c))
+                                      command=lambda c=idx: self.OnClick(c))
                 for line in data:
                     mline = [val for val in line]
                     self.tree.insert("", "end", values=mline)
             else:
-                if data.shape[0]>0:
+                if data.shape[0] > 0:
                     self.tree = ttk.Treeview(  # this is for 2D matrix
                         columns=mkey, show="headings")
                     self.tree.heading(0, text=0,
-                                command=lambda c=mkey: self.OnClick(c))
+                                      command=lambda c=mkey: self.OnClick(c))
                     for line in np.squeeze(data):
                         self.tree.insert("", "end", values=line)
                 else:
@@ -1244,12 +1197,15 @@ class MTable():
                         mtext = '"' + mtext + '"'
                     self.tree.insert("", "end", values=mtext)
         elif ndim == 1:
-            if data.shape[0]>0:
-                self.tree = ttk.Treeview(  # this is for 2D matrix
+            if data.shape[0] > 0:
+                self.tree = ttk.Treeview(  # this is for 1D matrix
                     columns=mkey, show="headings")
                 self.tree.heading(0, text=0,
-                                command=lambda c=mkey: self.OnClick(c))
+                                  command=lambda c=mkey: self.OnClick(c))
                 for line in data:
+                    print(line)
+                    if isinstance(line, str):
+                        line = (line,)  # needed because spaces not handled
                     self.tree.insert("", "end", values=line)
             else:
                 self.tree = ttk.Treeview(  # this is for 0D matrix
@@ -1271,8 +1227,9 @@ class MTable():
                 mtext = '"' + mtext + '"'  # needed because spaces not handled
             self.tree.insert("", "end", values=mtext)
         elif ndim > 2:
-            warning=HELPWIN(mkey)
-            warning.configtext("currently not implemented to handle data with higher dimension than 3\n")
+            warning = HELPWIN(mkey)
+            warning.configtext(
+                "currently not implemented to handle data with higher dimension than 3\n")
         return
 
     def configure(self, mkey):
@@ -1305,7 +1262,6 @@ class MTable():
         try:
             number = int(itemstring)
         except:
-            # try without the first diget
             number = int(itemstring[1:], 16)-1
         return number
 
@@ -1377,7 +1333,7 @@ class MTable():
             if isinstance(key, int):  # I need the column, not the row!
                 if ndim == 2:
                     Fp.FASTPLOT(self.data[:, key].flatten(), title=self.mtitle 
-                                + " column " + str(key)) # added flatt
+                                + " column " + str(key))  # added flatt
                 else:
                     Fp.FASTPLOT(self.data[key], title=self.mtitle +
                                 " column " + str(key))
