@@ -7,7 +7,7 @@ requirements = ["matplotlib>=2.2.2,<3","numpy>=1.16","netCDF4>=1.3","pyhdf>=0.10
 
 setup(
     name="pyhdf45view",
-    version="0.0.5",
+    version="0.0.8",
     author="Martina M Friedrich",
     author_email="5464@gmx.net",
     description="A package to interactively view netCDF and hdf4/ hdf5 files",

@@ -58,8 +58,13 @@ import pyhdf.HDF
 import pyhdf.V
 import pyhdf.VS
 import pyhdf.SD
-import Fastplot as Fp
-from Fastplot import HELPWIN, center
+try:
+    import Fastplot as Fp
+    from Fastplot import HELPWIN, center
+except:
+    from pyhdf45view import Fastplot as Fp
+    from pyhdf45view.Fastplot import HELPWIN, center
+
 import numpy as np
 
 

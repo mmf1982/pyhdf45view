@@ -20,4 +20,4 @@ I recomment to install it in an environment first:
 
 ### Author: Martina M. Friedrich
 ### Date: 2014 -- 2019
-### Version 0.0.5: Dec.4th 2019
+### Version 0.0.8: Dec.4th 2019
