@@ -19,5 +19,5 @@ which compares contents and writes differences to a hdf5 file.
 I recomment to install it in an environment first:
 
 ### Author: Martina M. Friedrich
-### Date: 2014 -- 2019
+### Date: 2014 -- 2020
 ### Version 0.0.9: July.16 2020
