@@ -20,7 +20,7 @@ try:
     from matplotlib.backends.backend_tkagg import NavigationToolbar2TkAgg
 except:
     from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk as NavigationToolbar2TkAgg
-from matplotlib.colors import LogNorm
+from matplotlib.colors import LogNorm, Normalize
 from matplotlib.pyplot import colormaps
 import numpy as np
 import numpy.ma as ma
@@ -140,19 +140,30 @@ class DATA2D(object):
         self.im.set_data(self.data)
         if plotlog:
             self.im.set_norm(LogNorm(mymin, mymax))
-            self.cbar.update_bruteforce(self.im)
+            # seems like the below makes things worse now (July 2020)
+            # self.cbar.update_bruteforce(self.im)
         else:
-            self.im.set_norm(None)
-            self.cbar.update_bruteforce(self.im)
+            self.im.set_norm(Normalize(mymin, mymax))
+            #self.cbar.update_bruteforce(self.im)
         self.pfr.canvas.draw()
-        self.cbar.set_array(self.data[self.xmin:self.xmax, self.ymin:self.ymax])
+        try:
+            self.cbar.set_array(self.data[self.xmin:self.xmax, self.ymin:self.ymax])
+        except:
+            dataxs = self.data[self.xmin:self.xmax, self.ymin:self.ymax]
+            # instead of setting limits on cbar, since mpl 3.1 (or earlier)
+            # need to set it on the mapable data instead
+            #self.cbar.set_clim(vmin=np.nanmin(dataxs), vmax=np.nanmax(dataxs))
+            #self.im.set_clim(vmin=np.nanmin(dataxs), vmax=np.nanmax(dataxs))
         # works with set_data in z
         self.im.set_cmap(self.mycmap)
         self.pfr.a.set_xlim(xmin=self.ymin-0.5, xmax=self.ymax-0.5)
         self.pfr.a.set_ylim(top=self.xmin-0.5, bottom=self.xmax-0.5)
         self.im.set_clim(vmin=mymin, vmax=mymax)
         self.im.changed()
-        self.cbar.changed()
+        try:
+            self.cbar.changed()
+        except AttributeError:
+            pass
         self.cbar.update_normal(self.im)
         self.pfr.toolbar.update()
         self.pfr.canvas.draw()
@@ -212,9 +223,9 @@ class Coordinateframe(Tk.Frame):
         self.ez2 = Tk.Entry(self, width=5)
         self.ez2.grid(column=5, row=1, sticky="nsew")
         self.ez2.focus_set()
-        freezebutton = Tk.Button(self, text="freeze", width=5,
+        self.freezebutton = Tk.Button(self, text="freeze", width=5,
                                  command=self.freeze)
-        freezebutton.grid(column=7, row=0, sticky="nsew")
+        self.freezebutton.grid(column=7, row=0, sticky="nsew")
         cmapbutton = Tk.Button(self, text="cmap", width=5)
         cmapbutton.grid(column=7, row=1, sticky="nsew")
         cmapbutton.bind("<Button-1>", self.cmapchoose)
@@ -326,8 +337,14 @@ class Coordinateframe(Tk.Frame):
         self.iscalling.updatefig()
 
     def freeze(self):
-        self.iscalling.frozen = True
-        self.iscalling.updatefig()
+        if self.iscalling.frozen:
+            self.iscalling.frozen = False
+            self.freezebutton["text"] = "freeze"
+            self.iscalling.updatefig()
+        else:
+            self.freezebutton["text"] = "frozen"
+            self.iscalling.frozen = True
+            self.iscalling.updatefig()
 
     def on_size(self, event):
         # not needed?
