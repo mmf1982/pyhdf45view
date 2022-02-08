@@ -1,4 +1,5 @@
 # pyhdfview
+discontinued
 
 ## to build dependences:
     pip3 install -r requirements_dev.txt
